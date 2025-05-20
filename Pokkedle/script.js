@@ -166,8 +166,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             showModal('¡Felicidades! Adivinaste el Pokémon del día.', dailyPokemonSprite);
         } else {
-            resultContainer.classList.remove('hidden');
-            resultMessage.textContent = `Lo siento, el Pokémon era ${dailyPokemonName}.`;
+            // Mostrar el mismo modal pero con mensaje de error y el sprite
+            showModal(`¡Has perdido! El Pokémon era ${dailyPokemonName}.`, dailyPokemonSprite);
+            // No se marca en la pokedex
         }
     }
 
