@@ -4,7 +4,7 @@ import { fetchPokemonById } from './src/api/pokemonApi.js';
 import { getDailyPokemonId } from './src/utils/randomPokemon.js';
 
 const MAX_ATTEMPTS = 6;
-let attempts = 0;
+let attempts = [];
 let dailyPokemonName = '';
 let dailyPokemonSprite = '';
 let isGameOver = false;
@@ -55,12 +55,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const savedState = JSON.parse(localStorage.getItem('pokkedle-state'));
     if (savedState && savedState.date === new Date().toDateString()) {
-        isGameOver = true;
+        isGameOver = savedState.isGameOver;
         guessInput.disabled = true;
         submitButton.disabled = true;
-        resultContainer.classList.remove('hidden');
-        resultMessage.textContent = savedState.message;
-        startCountdown();
+
+        // Restaura los intentos en la interfaz
+        if (Array.isArray(savedState.attempts)) {
+            attempts = savedState.attempts;
+            renderAttempts(attempts); // Debes tener una función para esto
+        }
+
+        // Si la partida terminó, muestra el modal
+        if (savedState.isGameOver && savedState.message && savedState.sprite) {
+            showModal(savedState.message, savedState.sprite);
+        }
         return;
     }
 
@@ -94,15 +102,25 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             errorMessage.classList.add('hidden');
-            if (attempts < MAX_ATTEMPTS) {
-                attempts++;
-                remainingAttempts.textContent = MAX_ATTEMPTS - attempts;
+            if (attempts.length < MAX_ATTEMPTS) {
+                attempts.push(guess); // Guarda la palabra
+                remainingAttempts.textContent = MAX_ATTEMPTS - attempts.length;
                 addGuessToGrid(guess, dailyPokemonName);
                 guessInput.value = '';
 
+                // Guarda el progreso tras cada intento
+                localStorage.setItem('pokkedle-state', JSON.stringify({
+                    date: new Date().toDateString(),
+                    isGameOver,
+                    isWin: false,
+                    message: '',
+                    sprite: '',
+                    attempts: attempts
+                }));
+
                 if (guess === dailyPokemonName) {
                     endGame(true);
-                } else if (attempts === MAX_ATTEMPTS) {
+                } else if (attempts.length === MAX_ATTEMPTS) {
                     endGame(false);
                 }
             }
@@ -143,6 +161,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         guessGrid.appendChild(row);
     }
 
+    function renderAttempts(attempts) {
+        guessGrid.innerHTML = '';
+        attempts.forEach(guess => {
+            addGuessToGrid(guess, dailyPokemonName);
+        });
+    }
+
     function endGame(isWin) {
         isGameOver = true;
         guessInput.disabled = true;
@@ -151,21 +176,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Guarda el estado de la partida
         localStorage.setItem('pokkedle-state', JSON.stringify({
             date: new Date().toDateString(),
-            isGameOver: true,
-            isWin,
-            message: isWin
-                ? '¡Felicidades! Adivinaste el Pokémon del día.'
-                : `¡Has perdido! El Pokémon era ${dailyPokemonName}.`
+            isGameOver,
+            isWin: false,
+            message: '',
+            sprite: '',
+            attempts: attempts
         }));
 
         if (isWin) {
-            // --- NUEVO: Guardar en la pokedex personal si está logueado ---
             const currentUser = localStorage.getItem('pokkedle-current-user');
             if (currentUser) {
                 let users = JSON.parse(localStorage.getItem('pokkedle-users') || '{}');
                 if (users[currentUser]) {
                     if (!users[currentUser].pokedex) users[currentUser].pokedex = [];
-                    // Evita duplicados
                     if (!users[currentUser].pokedex.includes(dailyPokemonName)) {
                         users[currentUser].pokedex.push(dailyPokemonName);
                         localStorage.setItem('pokkedle-users', JSON.stringify(users));
