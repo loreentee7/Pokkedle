@@ -15,8 +15,8 @@ Un juego diario tipo Wordle donde debes adivinar el Pokémon del día. Si te reg
 
 ## 🖼️ Capturas de pantalla
 
-![Pantalla principal](Pokkedle/screenshots/1.png)
-![Pokédex personal](Pokkedle/screenshots/2.png)
+![Pantalla principal](/screenshots/1.png)
+![Pokédex personal](/screenshots/2.png)
 
 ## 📝 Instalación y uso local
 
