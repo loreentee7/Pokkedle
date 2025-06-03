@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Mi Pokédex - Pokkedle</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/png" href="screenshots/pokedex.png">
+
+</head>
+
+<body>
+    <main class="centered-form">
+        <h2>Mi Pokédex</h2>
+        <div id="pokedex-progress" style="margin-bottom: 16px;">
+            Pokédex completada: <span id="completed-count">0</span> / <span id="total-count">0</span>
+        </div>
+        <a href="index.html" style="margin-bottom:16px;display:inline-block;">Volver al juego</a>
+        <div id="pokedex-list"></div>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="pokedex.js"></script>
+</body>
+
+</html>

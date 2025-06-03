@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokkedle - Adivina el Pokémon</title>
+    <link rel="icon" type="image/png" href="screenshots/pokedex.png">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>Pokkedle</h1>
+        <p>Adivina el Pokémon del día</p>
+        <div id="user-actions">
+            <button id="login-btn">Iniciar sesión / Registrarse</button>
+            <span id="user-info" class="hidden">
+                <span id="username"></span>
+                <a href="pokedex.html" id="pokedex-link">Mi Pokédex</a>
+                <button id="logout-btn">Cerrar sesión</button>
+            </span>
+        </div>
+    </header>
+    <main>
+        <div id="game-container">
+            <div id="timer-container">
+                <p>Próximo Pokémon en: <span id="countdown-timer">00:00:00</span></p>
+            </div>
+            <div id="guess-grid">
+                <!-- Aquí se mostrarán los intentos -->
+            </div>
+            <div id="attempts-counter">
+                Intentos disponibles: <span id="remaining-attempts">6</span>
+            </div>
+            <input type="text" id="guess-input" placeholder="Escribe el nombre del Pokémon" maxlength="20" autocomplete="off" />
+            <button id="submit-guess">Adivinar</button>
+            <button id="hint1-btn" disabled>Pista 1</button>
+            <button id="hint2-btn" disabled>Pista 2</button>
+            <p id="error-message" class="hidden">Pokémon no encontrado</p>
+        </div>
+        <div id="result-container" class="hidden">
+            <h2 id="result-message"></h2>
+        </div>
+        <!-- Modal para el sprite y mensaje -->
+        <div id="modal" class="modal hidden">
+            <div class="modal-content">
+                <span id="close-modal" class="close">&times;</span>
+                <img id="pokemon-sprite" src="" alt="Pokémon" />
+                <h2 id="modal-message"></h2>
+            </div>
+        </div>
+    </main>
+    <footer>
+        <p>Creado con ❤️ por elorente</p>
+    </footer>
+    <!-- Agrega esto antes de tus scripts principales -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script type="module" src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Registro - Pokkedle</title>
+    <link rel="stylesheet" href="styles.css">F
+    <link rel="icon" type="image/png" href="screenshots/pokedex.png">
+    
+</head>
+
+<body>
+    <main class="centered-form">
+        <h2>Registro</h2>
+        <form id="register-form">
+            <input type="text" id="register-username" placeholder="Usuario" required>
+            <input type="password" id="register-password" placeholder="Contraseña" required>
+            <button type="submit">Registrarse</button>
+        </form>
+        <p>¿Ya tienes cuenta? <a href="login.html">Inicia sesión</a></p>
+        <p id="register-error" class="hidden" style="color:red;">El usuario ya existe</p>
+    </main>
+    <!-- Agrega esto antes de tus scripts principales -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="supabaseClient.js"></script>
+    <script src="register.js"></script>
+</body>
+
+</html>
