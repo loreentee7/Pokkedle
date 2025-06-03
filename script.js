@@ -5,9 +5,9 @@ import { getDailyPokemonId } from './src/utils/randomPokemon.js';
 
 const MAX_ATTEMPTS = 6;
 let attempts = [];
-let dailyPokemonName = '';
-let dailyPokemonSprite = '';
 let isGameOver = false;
+let hint1Used = false;
+let hint2Used = false;
 
 document.addEventListener('DOMContentLoaded', () => {
     const loginBtn = document.getElementById('login-btn');
@@ -60,8 +60,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const remainingAttempts = document.getElementById('remaining-attempts');
     const errorMessage = document.getElementById('error-message');
     const modalMessage = document.getElementById('modal-message');
-    let hint1Used = false;
-    let hint2Used = false;
 
     const savedState = JSON.parse(localStorage.getItem('pokkedle-state'));
     if (savedState && savedState.date !== new Date().toDateString()) {
@@ -107,25 +105,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             handleGuess();
         }
     });
-
-    function updateHintButtons() {
-        // Pista 1: letras, activa a los 3 intentos
-        if (attempts.length >= 3 && !hint1Used && !isGameOver) {
-            hint1Btn.disabled = false;
-            hint1Btn.classList.add('enabled');
-        } else {
-            hint1Btn.disabled = true;
-            hint1Btn.classList.remove('enabled');
-        }
-        // Pista 2: silueta, activa a los 5 intentos
-        if (attempts.length >= 5 && !hint2Used && !isGameOver) {
-            hint2Btn.disabled = false;
-            hint2Btn.classList.add('enabled');
-        } else {
-            hint2Btn.disabled = true;
-            hint2Btn.classList.remove('enabled');
-        }
-    }
 
     // Llama a updateHintButtons en los lugares necesarios:
     updateHintButtons();
@@ -317,12 +296,15 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     if (state) {
         attempts = Array.isArray(state.intentos) ? state.intentos : [];
+        hint1Used = !!state.hint1Used;
+        hint2Used = !!state.hint2Used;
         renderAttempts(attempts);
+
         if (state.guessed) {
             isGameOver = true;
             guessInput.disabled = true;
             submitButton.disabled = true;
-            showModal('¡Ya adivinaste el Pokémon de hoy!', dailyPokemonSprite);
+            showModal('¡Felicidades! Ya adivinaste el Pokémon de hoy.', dailyPokemonSprite);
         } else if (attempts.length >= MAX_ATTEMPTS) {
             isGameOver = true;
             guessInput.disabled = true;
@@ -373,35 +355,27 @@ async function getTodayPokemonState() {
     if (!user) return null;
     const { data, error } = await supabase
         .from('pokedex')
-        .select('guessed, intentos')
+        .select('guessed, intentos, hint1Used, hint2Used')
         .eq('user_id', user.id)
         .eq('pokemon_name', dailyPokemonName)
         .single();
     if (error || !data) return null;
-    return data; // { guessed: true/false, intentos: [...] }
+    return data;
 }
 
-async function saveTodayPokemonState(guessed, attempts) {
+async function saveTodayPokemonState(guessed, attempts, hint1Used, hint2Used) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     await supabase.from('pokedex').upsert([
         {
-            user_id: user.id, // <-- ¡Esto es CLAVE!
+            user_id: user.id,
             pokemon_name: dailyPokemonName,
             guessed,
-            intentos: attempts
+            intentos: attempts,
+            hint1Used,
+            hint2Used
         }
     ], { onConflict: ['user_id', 'pokemon_name'] });
-}
-
-async function resetTodayPokemonForUser() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    await supabase
-        .from('pokedex')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('pokemon_name', dailyPokemonName);
 }
 
 // Llama a esta función desde la consola del navegador para probar:
