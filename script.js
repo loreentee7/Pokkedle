@@ -1,5 +1,6 @@
 // script.js
 
+const supabase = window.supabase; // O tu inicialización
 import { fetchPokemonById } from './src/api/pokemonApi.js';
 import { getDailyPokemonId } from './src/utils/randomPokemon.js';
 
@@ -8,6 +9,8 @@ let attempts = [];
 let dailyPokemonName = '';
 let dailyPokemonSprite = '';
 let isGameOver = false;
+let partida = null;
+let user = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     const loginBtn = document.getElementById('login-btn');
@@ -436,3 +439,139 @@ async function resetTodayPokemonForUser() {
 
 // Llama a esta función desde la consola del navegador para probar:
 resetTodayPokemonForUser();
+
+// Mostrar usuario logueado
+async function showCurrentUser() {
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+    const userDisplay = document.getElementById('user-display');
+    if (user) {
+        userDisplay.textContent = `Bienvenido, ${user.email}`;
+        document.getElementById('logout-btn').classList.remove('hidden');
+    } else {
+        userDisplay.textContent = 'No has iniciado sesión';
+        document.getElementById('logout-btn').classList.add('hidden');
+    }
+}
+
+// Obtener o crear partida diaria
+async function getOrCreateGame() {
+    let { data, error } = await supabase
+        .from('partidas')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('pokemon_id', pokemonId)
+        .eq('fecha', new Date().toISOString().slice(0, 10))
+        .single();
+
+    if (!data) {
+        const { data: nueva, error: err } = await supabase
+            .from('partidas')
+            .insert([{
+                user_id: user.id,
+                pokemon_id: pokemonId,
+                intentos: [],
+                pistas_usadas: [],
+                estado: 'jugando',
+                fecha: new Date().toISOString().slice(0, 10)
+            }])
+            .select()
+            .single();
+        partida = nueva;
+    } else {
+        partida = data;
+    }
+    actualizarUI();
+}
+
+// Actualizar partida
+async function updateGame(updates) {
+    const { data, error } = await supabase
+        .from('partidas')
+        .update(updates)
+        .eq('id', partida.id)
+        .select()
+        .single();
+    partida = data;
+    actualizarUI();
+}
+
+// Manejar intento
+async function handleGuess() {
+    if (partida.estado !== 'jugando') return;
+    const guess = guessInput.value.trim().toLowerCase();
+    if (!guess) return;
+
+    const nuevosIntentos = [...partida.intentos, guess];
+    let nuevoEstado = 'jugando';
+    let mensaje = '';
+
+    if (guess === pokemonName.toLowerCase()) {
+        nuevoEstado = 'ganado';
+        mensaje = '¡Has ganado!';
+    } else if (nuevosIntentos.length >= 6) {
+        nuevoEstado = 'perdido';
+        mensaje = `Has perdido. El Pokémon era ${pokemonName}`;
+    }
+
+    await updateGame({ intentos: nuevosIntentos, estado: nuevoEstado });
+    guessInput.value = '';
+    if (mensaje) mostrarModal(mensaje);
+}
+
+// Manejar pistas
+async function usarPista(numPista) {
+    if (partida.estado !== 'jugando') return;
+    if (partida.pistas_usadas.includes(numPista)) return;
+    const nuevasPistas = [...partida.pistas_usadas, numPista];
+    await updateGame({ pistas_usadas: nuevasPistas });
+    mostrarPista(numPista);
+}
+
+// Actualizar la UI según la partida
+function actualizarUI() {
+    mostrarIntentos(partida.intentos);
+    partida.pistas_usadas.forEach(mostrarPista);
+    if (partida.estado === 'ganado') mostrarModal('¡Has ganado!');
+    if (partida.estado === 'perdido') mostrarModal(`Has perdido. El Pokémon era ${pokemonName}`);
+}
+
+// Mostrar intentos en la UI
+function mostrarIntentos(intentos) {
+    const lista = document.getElementById('guess-list');
+    lista.innerHTML = '';
+    intentos.forEach(i => {
+        const li = document.createElement('li');
+        li.textContent = i;
+        lista.appendChild(li);
+    });
+}
+
+// Mostrar pista en la UI
+function mostrarPista(numPista) {
+    document.getElementById(`hint${numPista}`).classList.remove('hidden');
+}
+
+// Mostrar modal de mensaje
+function mostrarModal(mensaje) {
+    const modal = document.getElementById('modal');
+    modal.querySelector('.modal-message').textContent = mensaje;
+    modal.classList.remove('hidden');
+}
+
+// Eventos
+const guessInput = document.getElementById('guess-input');
+document.getElementById('submit-btn').addEventListener('click', handleGuess);
+guessInput.addEventListener('keypress', e => { if (e.key === 'Enter') handleGuess(); });
+document.getElementById('hint1-btn').addEventListener('click', () => usarPista(1));
+document.getElementById('hint2-btn').addEventListener('click', () => usarPista(2));
+document.getElementById('logout-btn').addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    window.location.reload();
+});
+
+// Inicialización
+document.addEventListener('DOMContentLoaded', async () => {
+    await showCurrentUser();
+    if (user) await getOrCreateGame();
+});
