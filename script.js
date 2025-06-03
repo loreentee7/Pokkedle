@@ -289,23 +289,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     hint1Btn.addEventListener('click', () => {
         if (hint1Btn.disabled || hint1Used || isGameOver) return;
         hint1Used = true;
-        hint1Btn.disabled = true;
-        hint1Btn.classList.remove('enabled');
+        updateHintButtons();
         let randomIndex = Math.floor(Math.random() * (dailyPokemonName.length - 2)) + 1;
         showModal(
             `Pista: El nombre empieza por "${dailyPokemonName[0].toUpperCase()}" y contiene la letra "${dailyPokemonName[randomIndex].toUpperCase()}"`,
             ''
         );
-        modalSprite.style.filter = '';
     });
 
     // Pista 2: silueta
     hint2Btn.addEventListener('click', async () => {
         if (hint2Btn.disabled || hint2Used || isGameOver) return;
         hint2Used = true;
-        hint2Btn.disabled = true;
-        hint2Btn.classList.remove('enabled');
-        // Genera la silueta real y muéstrala
+        updateHintButtons();
         const silhouetteUrl = await getSilhouetteDataUrl(dailyPokemonSprite);
         showModal('Pista: Aquí tienes la silueta del Pokémon.', silhouetteUrl);
     });
@@ -313,10 +309,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Al cargar la página, consulta el estado del usuario en Supabase
 window.addEventListener('DOMContentLoaded', async () => {
-    // Carga el estado del usuario desde Supabase
     const state = await getTodayPokemonState();
-    let attempts = [];
-    let isGameOver = false;
+    attempts = [];
+    isGameOver = false;
+    hint1Used = false;
+    hint2Used = false;
 
     if (state) {
         attempts = Array.isArray(state.intentos) ? state.intentos : [];
@@ -326,40 +323,14 @@ window.addEventListener('DOMContentLoaded', async () => {
             guessInput.disabled = true;
             submitButton.disabled = true;
             showModal('¡Ya adivinaste el Pokémon de hoy!', dailyPokemonSprite);
-        }
-    } else {
-        // No hay progreso previo
-        attempts = [];
-        renderAttempts(attempts);
-        guessInput.disabled = false;
-        submitButton.disabled = false;
-        isGameOver = false;
-    }
-
-    // Maneja el intento del usuario
-    submitButton.onclick = async function () {
-        if (isGameOver) return;
-        const guess = guessInput.value.trim().toLowerCase();
-        if (!guess) return;
-        attempts.push(guess);
-        renderAttempts(attempts);
-
-        if (guess === dailyPokemonName) {
-            isGameOver = true;
-            guessInput.disabled = true;
-            submitButton.disabled = true;
-            await saveTodayPokemonState(true, attempts);
-            showModal('¡Felicidades! Adivinaste el Pokémon del día.', dailyPokemonSprite);
         } else if (attempts.length >= MAX_ATTEMPTS) {
             isGameOver = true;
             guessInput.disabled = true;
             submitButton.disabled = true;
-            await saveTodayPokemonState(false, attempts);
             showModal(`¡Has perdido! El Pokémon era ${dailyPokemonName}.`, dailyPokemonSprite);
-        } else {
-            await saveTodayPokemonState(false, attempts);
         }
-    };
+    }
+    updateHintButtons();
 });
 
 function getSilhouetteDataUrl(spriteUrl) {
